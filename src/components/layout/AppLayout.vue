@@ -2,7 +2,7 @@
   <div class="app-container">
     <el-container class="layout-container">
       <!-- 侧边栏 -->
-      <el-aside :width="isCollapse ? '64px' : '220px'" class="sidebar">
+      <el-aside :width="isCollapse ? '64px' : '240px'" class="sidebar">
         <div class="logo">
           <div class="logo-container">
             <img src="@/assets/logo.svg" alt="Logo" class="logo-img" />
@@ -267,9 +267,9 @@ const logout = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-left: v-bind('isCollapse ? "64px" : "220px"');
+  margin-left: v-bind('isCollapse ? "64px" : "240px"');
   transition: margin-left 0.3s;
-  width: calc(100% - v-bind('isCollapse ? "64px" : "220px"'));
+  width: calc(100% - v-bind('isCollapse ? "64px" : "240px"'));
   min-width: 0;
   padding: 0;
   position: relative;
@@ -282,23 +282,24 @@ const logout = () => {
   align-items: center;
   justify-content: flex-start;
   background: #ffffff;
-  padding: 0 16px;
+  padding: 0 10px 0 16px;
   overflow: hidden;
   border-bottom: 1px solid #f0f0f0;
 }
 
 .logo-container {
   position: relative;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   overflow: hidden;
   background: transparent;
-  margin-right: 12px;
+  margin-right: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s;
+  flex-shrink: 0;
 }
 
 .logo-container:hover {
@@ -322,28 +323,34 @@ const logout = () => {
 
 .logo-title {
   color: #333333;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 160px;
-  letter-spacing: 0.5px;
+  width: calc(100% - 10px); /* 使用calc计算宽度 */
+  max-width: 210px; /* 进一步增加最大宽度 */
+  letter-spacing: 0.2px; /* 减小字母间距 */
   text-shadow: none;
   transition: all 0.3s;
   line-height: 1.2;
   display: flex;
   align-items: center;
+  flex: 1; /* 允许标题区域占据剩余空间 */
 }
 
 .title-text {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   opacity: 1;
   position: relative;
   transition: all 0.3s;
   color: #333333;
+  width: 100%;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  display: inline-block; /* 确保文本能够正确应用ellipsis */
 }
 
 .logo:hover .title-text {
