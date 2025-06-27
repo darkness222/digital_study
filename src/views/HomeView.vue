@@ -269,8 +269,13 @@ const switchTab = (tab: string) => {
                 <el-table v-else :data="recentResources" style="width: 100%">
                   <el-table-column prop="name" label="资源名称" min-width="180" />
                   <el-table-column prop="type" label="类型" width="100" />
-                  <el-table-column prop="updateTime" label="最后修改时间" width="180" />
-                  <el-table-column label="操作" width="180" fixed="right">
+                  <el-table-column
+                    prop="updateTime"
+                    label="最后修改时间"
+                    width="180"
+                    header-align="center"
+                  />
+                  <el-table-column label="操作" width="180" fixed="right" header-align="center">
                     <template #default="scope">
                       <div class="table-actions">
                         <el-button size="small" @click="viewResource(scope.row)">
@@ -510,8 +515,13 @@ const switchTab = (tab: string) => {
             <el-table :data="favorites" style="width: 100%">
               <el-table-column prop="name" label="资源名称" min-width="180" />
               <el-table-column prop="type" label="类型" width="100" />
-              <el-table-column prop="createTime" label="收藏时间" width="180" />
-              <el-table-column label="操作" width="200" fixed="right">
+              <el-table-column
+                prop="createTime"
+                label="收藏时间"
+                width="180"
+                header-align="center"
+              />
+              <el-table-column label="操作" width="200" fixed="right" header-align="center">
                 <template #default="scope">
                   <div class="table-actions">
                     <el-button size="small" @click="viewResource(scope.row)">
@@ -1185,5 +1195,22 @@ const switchTab = (tab: string) => {
 
 .mt-10 {
   margin-top: 10px;
+}
+
+/* 表格头部统一样式 */
+:deep(.el-table__header-wrapper th),
+:deep(.el-table__fixed-header-wrapper th) {
+  background-color: #f0f2f5 !important;
+  color: #303133;
+}
+
+/* 确保固定列的背景色也被覆盖 */
+:deep(.el-table__fixed-right .el-table__fixed-header-wrapper th) {
+  background-color: #f0f2f5 !important;
+}
+
+/* 修正右侧固定列的边角修复元素的背景色 */
+:deep(.el-table__fixed-right-patch) {
+  background-color: #f0f2f5 !important;
 }
 </style>

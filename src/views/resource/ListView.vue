@@ -103,31 +103,55 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="type" label="类型" width="100">
+        <el-table-column prop="type" label="类型" width="100" header-align="center" align="center">
           <template #default="{ row }">
             <el-tag :type="getTypeTagType(row.type)">{{ getTypeLabel(row.type) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="subject" label="学科" width="100">
+        <el-table-column
+          prop="subject"
+          label="学科"
+          width="100"
+          header-align="center"
+          align="center"
+        >
           <template #default="{ row }">
             <span>{{ SubjectLabels[row.subject] || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column
+          prop="status"
+          label="状态"
+          width="100"
+          header-align="center"
+          align="center"
+        >
           <template #default="{ row }">
             <el-tag :type="ResourceStatusTagTypes[row.status]">
               {{ ResourceStatusLabels[row.status] }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="size" label="大小" width="100">
+        <el-table-column prop="size" label="大小" width="100" header-align="center" align="center">
           <template #default="{ row }">
             {{ formatFileSize(row.size) }}
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column prop="updateTime" label="更新时间" width="180" />
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column
+          prop="createTime"
+          label="创建时间"
+          width="180"
+          header-align="center"
+          align="center"
+        />
+        <el-table-column
+          prop="updateTime"
+          label="更新时间"
+          width="180"
+          header-align="center"
+          align="center"
+        />
+        <el-table-column label="操作" width="200" fixed="right" header-align="center">
           <template #default="{ row }">
             <el-button size="small" @click="viewResource(row)">查看</el-button>
             <el-button size="small" type="primary" @click="editResource(row)">编辑</el-button>
@@ -428,6 +452,8 @@ onMounted(() => {
 <style scoped>
 .resource-list-container {
   padding: 20px;
+  background-color: #f0f2f5;
+  min-height: 100%;
 }
 
 .page-header {
@@ -438,8 +464,8 @@ onMounted(() => {
 }
 
 .page-title {
-  margin: 0;
-  font-size: 22px;
+  font-size: 24px;
+  font-weight: 600;
   color: #303133;
 }
 
@@ -453,13 +479,14 @@ onMounted(() => {
 }
 
 .resource-table-card {
-  margin-bottom: 20px;
+  border-radius: 8px;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-weight: 600;
 }
 
 .header-actions {
@@ -470,16 +497,33 @@ onMounted(() => {
 .resource-name {
   display: flex;
   align-items: center;
-  gap: 8px;
 }
 
 .resource-icon {
-  color: var(--primary-color);
+  margin-right: 8px;
+  color: #409eff;
 }
 
 .pagination-container {
-  margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+  margin-top: 20px;
+}
+
+/* 表格头部统一样式 */
+:deep(.el-table__header-wrapper th),
+:deep(.el-table__fixed-header-wrapper th) {
+  background-color: #f0f2f5 !important;
+  color: #303133;
+}
+
+/* 确保固定列的背景色也被覆盖 */
+:deep(.el-table__fixed-right .el-table__fixed-header-wrapper th) {
+  background-color: #f0f2f5 !important;
+}
+
+/* 修正右侧固定列的边角修复元素的背景色 */
+:deep(.el-table__fixed-right-patch) {
+  background-color: #f0f2f5 !important;
 }
 </style>
