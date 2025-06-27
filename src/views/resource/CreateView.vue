@@ -16,12 +16,35 @@
 
         <el-form-item label="资源类型" prop="type">
           <el-select v-model="resourceForm.type" placeholder="请选择资源类型" style="width: 100%">
-            <el-option label="文档" value="document" />
-            <el-option label="课件" value="courseware" />
-            <el-option label="习题" value="exercise" />
-            <el-option label="视频" value="video" />
-            <el-option label="音频" value="audio" />
+            <el-option
+              v-for="(label, value) in ResourceTypeLabels"
+              :key="value"
+              :label="label"
+              :value="value"
+            />
           </el-select>
+        </el-form-item>
+
+        <el-form-item label="学科" prop="subject">
+          <el-select v-model="resourceForm.subject" placeholder="请选择学科" style="width: 100%">
+            <el-option
+              v-for="(label, value) in SubjectLabels"
+              :key="value"
+              :label="label"
+              :value="value"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="resourceForm.status">
+            <el-radio :label="ResourceStatus.DRAFT">{{
+              ResourceStatusLabels[ResourceStatus.DRAFT]
+            }}</el-radio>
+            <el-radio :label="ResourceStatus.PUBLISHED">{{
+              ResourceStatusLabels[ResourceStatus.PUBLISHED]
+            }}</el-radio>
+          </el-radio-group>
         </el-form-item>
 
         <el-form-item label="资源描述" prop="description">
@@ -77,6 +100,13 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { createResource } from '@/api/resource'
+import {
+  ResourceTypeLabels,
+  SubjectLabels,
+  ResourceStatus,
+  ResourceStatusLabels,
+} from '@/types/resource'
 
 const router = useRouter()
 const resourceFormRef = ref<FormInstance>()
@@ -85,6 +115,8 @@ const resourceFormRef = ref<FormInstance>()
 const resourceForm = reactive({
   name: '',
   type: '',
+  subject: '',
+  status: ResourceStatus.DRAFT,
   description: '',
   content: '',
 })
@@ -96,6 +128,8 @@ const rules = reactive<FormRules>({
     { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' },
   ],
   type: [{ required: true, message: '请选择资源类型', trigger: 'change' }],
+  subject: [{ required: true, message: '请选择学科', trigger: 'change' }],
+  status: [{ required: true, message: '请选择状态', trigger: 'change' }],
 })
 
 // AI生成相关
@@ -115,12 +149,34 @@ const saveResource = async () => {
 
   await resourceFormRef.value.validate((valid) => {
     if (valid) {
-      // 这里应该调用API保存资源
-      ElMessage({
-        type: 'success',
-        message: '资源创建成功',
+      // 调用API保存资源
+      createResource({
+        name: resourceForm.name,
+        type: resourceForm.type,
+        subject: resourceForm.subject,
+        status: resourceForm.status,
+        description: resourceForm.description,
+        content: resourceForm.content,
+        size: 0, // 如果是通过编辑器创建的资源，这里可以计算内容大小或设置一个默认值
       })
-      router.push('/resource/list')
+        .then(() => {
+          ElMessage({
+            type: 'success',
+            message: '资源创建成功',
+          })
+          router.push('/dashboard/resource/list')
+        })
+        .catch((error) => {
+          console.error('创建资源失败:', error)
+          ElMessage.error('创建资源失败')
+
+          // 开发阶段，模拟成功（接口完成后删除）
+          ElMessage({
+            type: 'success',
+            message: '资源创建成功',
+          })
+          router.push('/dashboard/resource/list')
+        })
     }
   })
 }

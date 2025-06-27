@@ -42,7 +42,6 @@
               <el-tag :type="getTypeTagType(template.type)" size="small">{{
                 getTypeLabel(template.type)
               }}</el-tag>
-              <span class="template-usage">使用次数: {{ template.usageCount }}</span>
             </div>
             <h3 class="template-title">{{ template.name }}</h3>
             <p class="template-desc">{{ template.description }}</p>
@@ -92,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
@@ -103,7 +102,6 @@ interface Template {
   name: string
   type: string
   description: string
-  usageCount: number
   content: string
 }
 
@@ -123,7 +121,6 @@ const templates = ref<Template[]>([
     name: '教学课件模板',
     type: 'courseware',
     description: '适用于各学科的通用教学课件模板，包含封面、目录、内容页等',
-    usageCount: 256,
     content: '<h3>教学课件模板</h3><p>这是一个教学课件模板的预览内容...</p>',
   },
   {
@@ -131,7 +128,6 @@ const templates = ref<Template[]>([
     name: '单元测试试卷',
     type: 'exercise',
     description: '包含选择题、填空题、解答题等多种题型的单元测试试卷模板',
-    usageCount: 189,
     content: '<h3>单元测试试卷</h3><p>这是一个单元测试试卷模板的预览内容...</p>',
   },
   {
@@ -139,7 +135,6 @@ const templates = ref<Template[]>([
     name: '知识点总结文档',
     type: 'document',
     description: '用于总结教学重点、难点的知识点总结文档模板',
-    usageCount: 312,
     content: '<h3>知识点总结文档</h3><p>这是一个知识点总结文档模板的预览内容...</p>',
   },
   {
@@ -147,7 +142,6 @@ const templates = ref<Template[]>([
     name: '实验报告模板',
     type: 'document',
     description: '适用于物理、化学、生物等学科的实验报告模板',
-    usageCount: 145,
     content: '<h3>实验报告模板</h3><p>这是一个实验报告模板的预览内容...</p>',
   },
   {
@@ -155,7 +149,6 @@ const templates = ref<Template[]>([
     name: '教学视频模板',
     type: 'video',
     description: '包含片头、正文、片尾的教学视频模板',
-    usageCount: 98,
     content: '<h3>教学视频模板</h3><p>这是一个教学视频模板的预览内容...</p>',
   },
   {
@@ -163,7 +156,6 @@ const templates = ref<Template[]>([
     name: '听力练习模板',
     type: 'audio',
     description: '英语听力练习的标准模板，包含听力原文和习题',
-    usageCount: 76,
     content: '<h3>听力练习模板</h3><p>这是一个听力练习模板的预览内容...</p>',
   },
 ])
@@ -187,9 +179,17 @@ const filteredTemplates = computed(() => {
     )
   }
 
-  totalTemplates.value = result.length
   return result
 })
+
+// 更新模板总数
+watch(
+  filteredTemplates,
+  (newVal) => {
+    totalTemplates.value = newVal.length
+  },
+  { immediate: true },
+)
 
 // 获取资源类型标签类型
 const getTypeTagType = (type: string) => {
@@ -323,11 +323,6 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
-}
-
-.template-usage {
-  font-size: 12px;
-  color: #909399;
 }
 
 .template-title {

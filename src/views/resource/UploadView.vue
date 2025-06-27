@@ -58,7 +58,7 @@
           </template>
         </el-table-column>
         <el-table-column label="操作" width="120">
-          <template #default="{ row, $index }">
+          <template #default="{ $index }">
             <el-button size="small" type="danger" @click="removeFile($index)">移除</el-button>
           </template>
         </el-table-column>
@@ -73,8 +73,17 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
 
+// 文件类型定义
+interface UploadFile {
+  name: string
+  size: number
+  status?: 'success' | 'fail' | 'uploading'
+  raw: File
+  uid: number | string
+}
+
 const router = useRouter()
-const fileList = ref<any[]>([])
+const fileList = ref<UploadFile[]>([])
 const uploading = ref(false)
 
 // 返回上一页
@@ -97,7 +106,7 @@ const goBack = () => {
 }
 
 // 处理文件变化
-const handleFileChange = (file: any, files: any[]) => {
+const handleFileChange = (file: UploadFile, files: UploadFile[]) => {
   fileList.value = files
 }
 

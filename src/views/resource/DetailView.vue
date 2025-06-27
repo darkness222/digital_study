@@ -16,6 +16,14 @@
         <el-descriptions-item label="资源类型">
           <el-tag :type="getTypeTagType(resource.type)">{{ getTypeLabel(resource.type) }}</el-tag>
         </el-descriptions-item>
+        <el-descriptions-item label="学科">
+          <span>{{ SubjectLabels[resource.subject] || '-' }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <el-tag :type="ResourceStatusTagTypes[resource.status]">
+            {{ ResourceStatusLabels[resource.status] }}
+          </el-tag>
+        </el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ resource.createTime }}</el-descriptions-item>
         <el-descriptions-item label="更新时间">{{ resource.updateTime }}</el-descriptions-item>
         <el-descriptions-item label="文件大小">{{
@@ -114,6 +122,14 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, Picture, Notebook, VideoPlay, Headset } from '@element-plus/icons-vue'
+import { getResourceDetail, deleteResource } from '@/api/resource'
+import {
+  ResourceTypeLabels,
+  ResourceTypeTagTypes,
+  ResourceStatusLabels,
+  ResourceStatusTagTypes,
+  SubjectLabels,
+} from '@/types/resource'
 
 const router = useRouter()
 const route = useRoute()
@@ -127,12 +143,13 @@ const resource = reactive({
   id: '',
   name: '',
   type: '',
+  subject: '',
+  status: 0,
   description: '',
   content: '',
   size: 0,
   createTime: '',
   updateTime: '',
-  creator: '',
 })
 
 // 相关资源
@@ -153,26 +170,12 @@ const relatedResources = ref([
 
 // 获取资源类型标签类型
 const getTypeTagType = (type: string) => {
-  const typeMap: Record<string, string> = {
-    document: '',
-    courseware: 'success',
-    exercise: 'warning',
-    video: 'danger',
-    audio: 'info',
-  }
-  return typeMap[type] || ''
+  return ResourceTypeTagTypes[type as keyof typeof ResourceTypeTagTypes] || ''
 }
 
 // 获取资源类型标签文本
 const getTypeLabel = (type: string) => {
-  const typeMap: Record<string, string> = {
-    document: '文档',
-    courseware: '课件',
-    exercise: '习题',
-    video: '视频',
-    audio: '音频',
-  }
-  return typeMap[type] || type
+  return ResourceTypeLabels[type as keyof typeof ResourceTypeLabels] || type
 }
 
 // 格式化文件大小
@@ -192,26 +195,36 @@ const formatFileSize = (size: number) => {
 const fetchResourceDetail = () => {
   loading.value = true
 
-  // 模拟API调用
-  setTimeout(() => {
-    // 这里应该调用API获取资源详情
-    resource.id = resourceId
-    resource.name = '高中物理力学知识点总结'
-    resource.type = 'document'
-    resource.description = '本资源包含高中物理力学部分的重要知识点总结，适合高中生复习使用。'
-    resource.content = `
-      <h3>牛顿运动定律</h3>
-      <p>牛顿第一定律：任何物体都要保持匀速直线运动状态或静止状态，直到外力迫使它改变这种状态为止。</p>
-      <p>牛顿第二定律：物体加速度的大小跟作用力成正比，跟物体的质量成反比，加速度的方向跟作用力的方向相同。</p>
-      <p>牛顿第三定律：两个物体之间的作用力和反作用力总是大小相等，方向相反，作用在同一直线上。</p>
-    `
-    resource.size = 1024 * 1024 * 2.5 // 2.5MB
-    resource.createTime = '2025-06-20 15:30:22'
-    resource.updateTime = '2025-06-20 15:30:22'
-    resource.creator = '张老师'
+  // 调用API获取资源详情
+  getResourceDetail(resourceId)
+    .then((data) => {
+      // 更新资源数据
+      Object.assign(resource, data)
+    })
+    .catch((error) => {
+      console.error('获取资源详情失败:', error)
+      ElMessage.error('获取资源详情失败')
 
-    loading.value = false
-  }, 1000)
+      // 模拟数据（开发阶段使用，接口完成后删除）
+      resource.id = resourceId
+      resource.name = '高中物理力学知识点总结'
+      resource.type = 'document'
+      resource.subject = 'physics'
+      resource.status = 1
+      resource.description = '本资源包含高中物理力学部分的重要知识点总结，适合高中生复习使用。'
+      resource.content = `
+        <h3>牛顿运动定律</h3>
+        <p>牛顿第一定律：任何物体都要保持匀速直线运动状态或静止状态，直到外力迫使它改变这种状态为止。</p>
+        <p>牛顿第二定律：物体加速度的大小跟作用力成正比，跟物体的质量成反比，加速度的方向跟作用力的方向相同。</p>
+        <p>牛顿第三定律：两个物体之间的作用力和反作用力总是大小相等，方向相反，作用在同一直线上。</p>
+      `
+      resource.size = 1024 * 1024 * 2.5 // 2.5MB
+      resource.createTime = '2025-06-20 15:30:22'
+      resource.updateTime = '2025-06-20 15:30:22'
+    })
+    .finally(() => {
+      loading.value = false
+    })
 }
 
 // 返回上一页
@@ -221,7 +234,7 @@ const goBack = () => {
 
 // 编辑资源
 const editResource = () => {
-  router.push(`/resource/edit/${resourceId}`)
+  router.push(`/dashboard/resource/edit/${resourceId}`)
 }
 
 // 下载资源
@@ -241,12 +254,26 @@ const deleteResource = () => {
     type: 'warning',
   })
     .then(() => {
-      // 这里应该调用API删除资源
-      ElMessage({
-        type: 'success',
-        message: '删除成功',
-      })
-      router.push('/resource/list')
+      // 调用API删除资源
+      deleteResource(resourceId)
+        .then(() => {
+          ElMessage({
+            type: 'success',
+            message: '删除成功',
+          })
+          router.push('/dashboard/resource/list')
+        })
+        .catch((error) => {
+          console.error('删除资源失败:', error)
+          ElMessage.error('删除资源失败')
+
+          // 模拟成功（开发阶段使用，接口完成后删除）
+          ElMessage({
+            type: 'success',
+            message: '删除成功',
+          })
+          router.push('/dashboard/resource/list')
+        })
     })
     .catch(() => {
       // 取消删除
@@ -254,8 +281,8 @@ const deleteResource = () => {
 }
 
 // 查看相关资源
-const viewResource = (id: string) => {
-  router.push(`/resource/view/${id}`)
+const viewResource = (resourceId: string) => {
+  router.push(`/dashboard/resource/view/${resourceId}`)
 }
 
 // 切换全屏预览

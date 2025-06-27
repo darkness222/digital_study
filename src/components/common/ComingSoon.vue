@@ -3,10 +3,10 @@
     <el-card class="coming-soon-card">
       <div class="coming-soon-content">
         <el-icon :size="64" class="coming-soon-icon">
-          <component :is="icon"></component>
+          <component :is="props.icon"></component>
         </el-icon>
-        <h2 class="coming-soon-title">{{ title }}</h2>
-        <p class="coming-soon-message">{{ message || '该功能正在开发中，敬请期待...' }}</p>
+        <h2 class="coming-soon-title">{{ props.title }}</h2>
+        <p class="coming-soon-message">{{ props.message || '该功能正在开发中，敬请期待...' }}</p>
         <el-button type="primary" @click="goBack">返回</el-button>
       </div>
     </el-card>
@@ -15,7 +15,6 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { Tools } from '@element-plus/icons-vue'
 
 const props = defineProps({
   title: {

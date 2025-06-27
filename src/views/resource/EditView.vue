@@ -21,12 +21,35 @@
             style="width: 100%"
             disabled
           >
-            <el-option label="文档" value="document" />
-            <el-option label="课件" value="courseware" />
-            <el-option label="习题" value="exercise" />
-            <el-option label="视频" value="video" />
-            <el-option label="音频" value="audio" />
+            <el-option
+              v-for="(label, value) in ResourceTypeLabels"
+              :key="value"
+              :label="label"
+              :value="value"
+            />
           </el-select>
+        </el-form-item>
+
+        <el-form-item label="学科" prop="subject">
+          <el-select v-model="resourceForm.subject" placeholder="请选择学科" style="width: 100%">
+            <el-option
+              v-for="(label, value) in SubjectLabels"
+              :key="value"
+              :label="label"
+              :value="value"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="resourceForm.status">
+            <el-radio :label="ResourceStatus.DRAFT">{{
+              ResourceStatusLabels[ResourceStatus.DRAFT]
+            }}</el-radio>
+            <el-radio :label="ResourceStatus.PUBLISHED">{{
+              ResourceStatusLabels[ResourceStatus.PUBLISHED]
+            }}</el-radio>
+          </el-radio-group>
         </el-form-item>
 
         <el-form-item label="资源描述" prop="description">
@@ -80,6 +103,13 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { getResourceDetail, updateResource } from '@/api/resource'
+import {
+  ResourceTypeLabels,
+  SubjectLabels,
+  ResourceStatus,
+  ResourceStatusLabels,
+} from '@/types/resource'
 
 const router = useRouter()
 const route = useRoute()
@@ -93,6 +123,8 @@ const resourceId = route.params.id as string
 const resourceForm = reactive({
   name: '',
   type: '',
+  subject: '',
+  status: ResourceStatus.DRAFT,
   description: '',
   content: '',
 })
@@ -104,22 +136,35 @@ const rules = reactive<FormRules>({
     { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' },
   ],
   type: [{ required: true, message: '请选择资源类型', trigger: 'change' }],
+  subject: [{ required: true, message: '请选择学科', trigger: 'change' }],
+  status: [{ required: true, message: '请选择状态', trigger: 'change' }],
 })
 
 // 获取资源详情
 const fetchResourceDetail = () => {
   loading.value = true
 
-  // 模拟API调用
-  setTimeout(() => {
-    // 这里应该调用API获取资源详情
-    resourceForm.name = '高中物理力学知识点总结'
-    resourceForm.type = 'document'
-    resourceForm.description = '本资源包含高中物理力学部分的重要知识点总结，适合高中生复习使用。'
-    resourceForm.content = '<p>这里是资源内容...</p>'
+  // 调用API获取资源详情
+  getResourceDetail(resourceId)
+    .then((data) => {
+      // 更新表单数据
+      Object.assign(resourceForm, data)
+    })
+    .catch((error) => {
+      console.error('获取资源详情失败:', error)
+      ElMessage.error('获取资源详情失败')
 
-    loading.value = false
-  }, 1000)
+      // 模拟数据（开发阶段使用，接口完成后删除）
+      resourceForm.name = '高中物理力学知识点总结'
+      resourceForm.type = 'document'
+      resourceForm.subject = 'physics'
+      resourceForm.status = ResourceStatus.PUBLISHED
+      resourceForm.description = '本资源包含高中物理力学部分的重要知识点总结，适合高中生复习使用。'
+      resourceForm.content = '<p>这里是资源内容...</p>'
+    })
+    .finally(() => {
+      loading.value = false
+    })
 }
 
 // 返回上一页
@@ -135,17 +180,35 @@ const saveResource = async () => {
     if (valid) {
       loading.value = true
 
-      // 模拟API调用
-      setTimeout(() => {
-        // 这里应该调用API保存资源
-        ElMessage({
-          type: 'success',
-          message: '资源更新成功',
+      // 调用API更新资源
+      updateResource(resourceId, {
+        name: resourceForm.name,
+        subject: resourceForm.subject,
+        status: resourceForm.status,
+        description: resourceForm.description,
+        content: resourceForm.content,
+      })
+        .then(() => {
+          ElMessage({
+            type: 'success',
+            message: '资源更新成功',
+          })
+          router.push('/dashboard/resource/list')
         })
-        router.push('/resource/list')
+        .catch((error) => {
+          console.error('更新资源失败:', error)
+          ElMessage.error('更新资源失败')
 
-        loading.value = false
-      }, 1000)
+          // 模拟成功（开发阶段使用，接口完成后删除）
+          ElMessage({
+            type: 'success',
+            message: '资源更新成功',
+          })
+          router.push('/dashboard/resource/list')
+        })
+        .finally(() => {
+          loading.value = false
+        })
     }
   })
 }

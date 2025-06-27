@@ -15,11 +15,32 @@
         </el-form-item>
         <el-form-item label="资源类型">
           <el-select v-model="searchForm.type" placeholder="请选择资源类型" clearable>
-            <el-option label="文档" value="document" />
-            <el-option label="课件" value="courseware" />
-            <el-option label="习题" value="exercise" />
-            <el-option label="视频" value="video" />
-            <el-option label="音频" value="audio" />
+            <el-option
+              v-for="(label, value) in ResourceTypeLabels"
+              :key="value"
+              :label="label"
+              :value="value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="学科">
+          <el-select v-model="searchForm.subject" placeholder="请选择学科" clearable>
+            <el-option
+              v-for="(label, value) in SubjectLabels"
+              :key="value"
+              :label="label"
+              :value="value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="searchForm.status" placeholder="请选择状态" clearable>
+            <el-option
+              v-for="(label, value) in ResourceStatusLabels"
+              :key="value"
+              :label="label"
+              :value="Number(value)"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="创建时间">
@@ -87,6 +108,18 @@
             <el-tag :type="getTypeTagType(row.type)">{{ getTypeLabel(row.type) }}</el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="subject" label="学科" width="100">
+          <template #default="{ row }">
+            <span>{{ SubjectLabels[row.subject] || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="status" label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="ResourceStatusTagTypes[row.status]">
+              {{ ResourceStatusLabels[row.status] }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="size" label="大小" width="100">
           <template #default="{ row }">
             {{ formatFileSize(row.size) }}
@@ -123,87 +156,43 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, Picture, Notebook, VideoPlay, Headset, Files } from '@element-plus/icons-vue'
+import { getResourceList, type ResourceQuery, type Resource } from '@/api/resource'
+import {
+  ResourceTypeLabels,
+  ResourceTypeTagTypes,
+  ResourceStatusLabels,
+  ResourceStatusTagTypes,
+  SubjectLabels,
+  ResourceStatus,
+} from '@/types/resource'
 
 const router = useRouter()
 const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
-const selectedResources = ref([])
+const selectedResources = ref<Resource[]>([])
 
 // 搜索表单
 const searchForm = reactive({
   name: '',
   type: '',
+  subject: '',
+  status: undefined as number | undefined,
   dateRange: [],
 })
 
 // 资源列表数据
-const resourceList = ref([
-  {
-    id: 1,
-    name: '高中物理力学知识点总结',
-    type: 'document',
-    size: 1024 * 1024 * 2.5, // 2.5MB
-    createTime: '2025-06-20 15:30:22',
-    updateTime: '2025-06-20 15:30:22',
-  },
-  {
-    id: 2,
-    name: '初中数学函数图像教学课件',
-    type: 'courseware',
-    size: 1024 * 1024 * 5.8, // 5.8MB
-    createTime: '2025-06-19 10:15:36',
-    updateTime: '2025-06-19 14:22:10',
-  },
-  {
-    id: 3,
-    name: '英语语法练习题',
-    type: 'exercise',
-    size: 1024 * 1024 * 1.2, // 1.2MB
-    createTime: '2025-06-18 14:22:51',
-    updateTime: '2025-06-18 14:22:51',
-  },
-  {
-    id: 4,
-    name: '中国历史朝代演变视频',
-    type: 'video',
-    size: 1024 * 1024 * 150, // 150MB
-    createTime: '2025-06-17 09:45:12',
-    updateTime: '2025-06-17 09:45:12',
-  },
-  {
-    id: 5,
-    name: '英语听力训练音频',
-    type: 'audio',
-    size: 1024 * 1024 * 35, // 35MB
-    createTime: '2025-06-16 16:08:33',
-    updateTime: '2025-06-16 16:08:33',
-  },
-])
+const resourceList = ref<Resource[]>([])
 
 // 获取资源类型标签类型
 const getTypeTagType = (type: string) => {
-  const typeMap: Record<string, string> = {
-    document: '',
-    courseware: 'success',
-    exercise: 'warning',
-    video: 'danger',
-    audio: 'info',
-  }
-  return typeMap[type] || ''
+  return ResourceTypeTagTypes[type as keyof typeof ResourceTypeTagTypes] || ''
 }
 
 // 获取资源类型标签文本
 const getTypeLabel = (type: string) => {
-  const typeMap: Record<string, string> = {
-    document: '文档',
-    courseware: '课件',
-    exercise: '习题',
-    video: '视频',
-    audio: '音频',
-  }
-  return typeMap[type] || type
+  return ResourceTypeLabels[type as keyof typeof ResourceTypeLabels] || type
 }
 
 // 格式化文件大小
@@ -221,7 +210,6 @@ const formatFileSize = (size: number) => {
 
 // 搜索
 const handleSearch = () => {
-  console.log('搜索条件:', searchForm)
   currentPage.value = 1
   fetchResourceList()
 }
@@ -230,6 +218,8 @@ const handleSearch = () => {
 const resetSearch = () => {
   searchForm.name = ''
   searchForm.type = ''
+  searchForm.subject = ''
+  searchForm.status = undefined
   searchForm.dateRange = []
   handleSearch()
 }
@@ -241,26 +231,26 @@ const refreshList = () => {
 
 // 创建资源
 const createResource = () => {
-  router.push('/resource/create')
+  router.push('/dashboard/resource/create')
 }
 
 // 上传资源
 const uploadResource = () => {
-  router.push('/resource/upload')
+  router.push('/dashboard/resource/upload')
 }
 
 // 查看资源
-const viewResource = (resource: any) => {
-  router.push(`/resource/view/${resource.id}`)
+const viewResource = (resource: Resource) => {
+  router.push(`/dashboard/resource/view/${resource.id}`)
 }
 
 // 编辑资源
-const editResource = (resource: any) => {
-  router.push(`/resource/edit/${resource.id}`)
+const editResource = (resource: Resource) => {
+  router.push(`/dashboard/resource/edit/${resource.id}`)
 }
 
 // 删除资源
-const deleteResource = (resource: any) => {
+const deleteResource = (resource: Resource) => {
   ElMessageBox.confirm(`确定要删除资源 "${resource.name}" 吗？`, '删除确认', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
@@ -314,7 +304,7 @@ const batchDelete = () => {
 }
 
 // 表格选择变化
-const handleSelectionChange = (selection: any[]) => {
+const handleSelectionChange = (selection: Resource[]) => {
   selectedResources.value = selection
 }
 
@@ -334,13 +324,100 @@ const handleSizeChange = (val: number) => {
 const fetchResourceList = () => {
   loading.value = true
 
-  // 模拟请求延迟
-  setTimeout(() => {
-    // 这里应该调用API获取数据
-    total.value = resourceList.value.length
+  // 构建查询参数
+  const query: ResourceQuery = {
+    name: searchForm.name || undefined,
+    type: searchForm.type || undefined,
+    subject: searchForm.subject || undefined,
+    status: searchForm.status,
+    pageNum: currentPage.value,
+    pageSize: pageSize.value,
+  }
 
-    loading.value = false
-  }, 500)
+  // 处理日期范围
+  if (searchForm.dateRange && searchForm.dateRange.length === 2) {
+    query.startDate = searchForm.dateRange[0]
+    query.endDate = searchForm.dateRange[1]
+  }
+
+  // 调用API获取数据
+  getResourceList(query)
+    .then((res) => {
+      resourceList.value = res.list
+      total.value = res.total
+    })
+    .catch((error) => {
+      console.error('获取资源列表失败:', error)
+      ElMessage.error('获取资源列表失败')
+
+      // 模拟数据（开发阶段使用，实际接口完成后删除）
+      resourceList.value = [
+        {
+          id: 1,
+          name: '高中物理力学知识点总结',
+          type: 'document',
+          subject: 'physics',
+          status: ResourceStatus.PUBLISHED,
+          size: 1024 * 1024 * 2.5, // 2.5MB
+          createTime: '2025-06-20 15:30:22',
+          updateTime: '2025-06-20 15:30:22',
+          description: '本资源包含高中物理力学部分的重要知识点总结',
+          content: '',
+        },
+        {
+          id: 2,
+          name: '初中数学函数图像教学课件',
+          type: 'courseware',
+          subject: 'math',
+          status: ResourceStatus.PUBLISHED,
+          size: 1024 * 1024 * 5.8, // 5.8MB
+          createTime: '2025-06-19 10:15:36',
+          updateTime: '2025-06-19 14:22:10',
+          description: '初中数学函数图像教学课件',
+          content: '',
+        },
+        {
+          id: 3,
+          name: '英语语法练习题',
+          type: 'exercise',
+          subject: 'english',
+          status: ResourceStatus.DRAFT,
+          size: 1024 * 1024 * 1.2, // 1.2MB
+          createTime: '2025-06-18 14:22:51',
+          updateTime: '2025-06-18 14:22:51',
+          description: '英语语法练习题',
+          content: '',
+        },
+        {
+          id: 4,
+          name: '中国历史朝代演变视频',
+          type: 'video',
+          subject: 'history',
+          status: ResourceStatus.PUBLISHED,
+          size: 1024 * 1024 * 150, // 150MB
+          createTime: '2025-06-17 09:45:12',
+          updateTime: '2025-06-17 09:45:12',
+          description: '中国历史朝代演变视频',
+          content: '',
+        },
+        {
+          id: 5,
+          name: '英语听力训练音频',
+          type: 'audio',
+          subject: 'english',
+          status: ResourceStatus.PUBLISHED,
+          size: 1024 * 1024 * 35, // 35MB
+          createTime: '2025-06-16 16:08:33',
+          updateTime: '2025-06-16 16:08:33',
+          description: '英语听力训练音频',
+          content: '',
+        },
+      ]
+      total.value = resourceList.value.length
+    })
+    .finally(() => {
+      loading.value = false
+    })
 }
 
 onMounted(() => {

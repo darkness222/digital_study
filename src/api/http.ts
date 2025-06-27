@@ -1,4 +1,5 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import axios from 'axios'
+import type { AxiosInstance, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
 
 // 创建axios实例
@@ -53,23 +54,26 @@ service.interceptors.response.use(
   },
 )
 
+// 定义通用的请求参数类型
+export type RequestParams = Record<string, string | number | boolean | undefined | null>
+
 // 封装GET请求
-export function get<T>(url: string, params?: any): Promise<T> {
+export function get<T>(url: string, params?: RequestParams): Promise<T> {
   return service.get(url, { params })
 }
 
 // 封装POST请求
-export function post<T>(url: string, data?: any): Promise<T> {
+export function post<T>(url: string, data?: Record<string, unknown>): Promise<T> {
   return service.post(url, data)
 }
 
 // 封装PUT请求
-export function put<T>(url: string, data?: any): Promise<T> {
+export function put<T>(url: string, data?: Record<string, unknown>): Promise<T> {
   return service.put(url, data)
 }
 
 // 封装DELETE请求
-export function del<T>(url: string, params?: any): Promise<T> {
+export function del<T>(url: string, params?: RequestParams): Promise<T> {
   return service.delete(url, { params })
 }
 
